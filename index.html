@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#ffe9f0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="수학 놀이">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&display=swap">
+<link rel="stylesheet" href="style.css">
+<title>인형이랑 수학 놀이</title>
+</head>
+<body>
+
+<!-- 1. 설명 화면 (부모님용) -->
+<section class="screen" id="intro">
+  <div class="intro-head">
+    <div class="big-doll" aria-hidden="true">🧸</div>
+    <h1>인형이랑 수학 놀이</h1>
+    <p>4~5세 아이가 애착인형과 함께<br>1부터 100까지 수를 놀면서 익혀요.</p>
+  </div>
+  <div class="info">
+    <h2>처음에 준비해요</h2>
+    <ul>
+      <li>애착인형 사진 1~5장 찍기 (없어도 돼요)</li>
+      <li>인형 이름 정하기</li>
+    </ul>
+  </div>
+  <div class="info">
+    <h2>놀이는 8단계예요</h2>
+    <div class="lv" id="introStages"></div>
+  </div>
+  <div class="info">
+    <h2>이렇게 배워요</h2>
+    <ul>
+      <li>아이들이 수를 익히는 순서(학습 경로)대로 <b>바로 알기 → 세기 → 비교 → 규칙 → 더하기·빼기 → 큰 수</b>로 이어져요.</li>
+      <li><b>물건 → 그림 → 숫자</b> 순서로, 그림을 보며 셀 수 있게 했어요.</li>
+      <li>글자를 몰라도 되게 <b>모든 문제를 소리로</b> 읽어 줘요.</li>
+      <li>틀리면 <b>응원 → 반짝 힌트 → 같이 세기</b> 순서로 도와줘요.</li>
+      <li>"똑똑해" 대신 <b>"끝까지 잘했어"</b>처럼 노력을 칭찬해요.</li>
+    </ul>
+  </div>
+  <div class="info">
+    <h2>버튼 색깔 약속</h2>
+    <ul>
+      <li><span class="swatch" style="background:var(--go-next)"></span> <b>파란 동그라미</b> = 다음 놀이 (오른쪽)</li>
+      <li><span class="swatch" style="background:var(--go-again)"></span> <b>주황 동그라미</b> = 한 번 더 (왼쪽)</li>
+      <li>그림·글자 없이 색깔로만 알아보게 했어요. 처음엔 같이 눌러 주세요.</li>
+    </ul>
+  </div>
+  <div class="info">
+    <h2>부모님께</h2>
+    <ul>
+      <li>옆에서 <b>같이 세어 주시면</b> 훨씬 잘 배워요.</li>
+      <li>하루 <b>10분</b>이 지나면 인형이 "졸려요" 하고 쉬어요. (부모님 메뉴에서 끌 수 있어요)</li>
+      <li>처음 화면 아래 버튼을 <b>2초 꾹</b> 누르면 단계 열기, 인형 바꾸기를 할 수 있어요.</li>
+      <li>사진은 <b>이 휴대폰에만</b> 저장되고 어디에도 올라가지 않아요.</li>
+      <li>브라우저 메뉴에서 <b>"홈 화면에 추가"</b>를 누르면 앱처럼 쓸 수 있어요.</li>
+    </ul>
+  </div>
+  <div class="bottom">
+    <button class="pill wide" id="introNext">인형 등록하기 ▶</button>
+  </div>
+</section>
+
+<!-- 2. 사진 찍기 -->
+<section class="screen" id="photos">
+  <div class="step-head">
+    <div class="step">1 / 2</div>
+    <h1>인형 사진을 찍어 주세요</h1>
+    <p>1장부터 5장까지 넣을 수 있어요.<br>여러 장이면 놀이 중에 번갈아 나와요.</p>
+  </div>
+  <div class="slots" id="slots"></div>
+  <input type="file" id="photoInput" accept="image/*" hidden>
+  <div class="notice" id="photoNotice"></div>
+  <div class="bottom">
+    <button class="pill wide" id="photosNext" disabled>다음 ▶</button>
+    <button class="link" id="photosSkip">사진 없이 하기</button>
+  </div>
+</section>
+
+<!-- 3. 이름 정하기 -->
+<section class="screen" id="naming">
+  <div class="step-head">
+    <div class="step">2 / 2</div>
+    <h1>인형 이름이 뭐예요?</h1>
+    <p>아이가 부르는 이름 그대로 써 주세요.</p>
+  </div>
+  <div class="name-preview">
+    <div class="doll" id="namePhoto"></div>
+    <div class="say" id="nameSay"></div>
+  </div>
+  <input class="name-input" id="nameInput" type="text" maxlength="12" placeholder="예: 토토" autocomplete="off" enterkeyhint="done">
+  <div class="bottom">
+    <button class="pill wide" id="nameNext" disabled>다 했어요 ▶</button>
+  </div>
+</section>
+
+<!-- 4. 처음 화면 (놀이 고르기) -->
+<section class="screen" id="home">
+  <div class="hero">
+    <button class="corner l" id="bookBtn" aria-label="스티커 모음책">📒</button>
+    <button class="corner r" id="helpBtn" aria-label="앱 설명 보기">?</button>
+    <button class="hero-photo doll" id="heroPhoto" aria-label="인사 듣기"></button>
+    <h1 id="homeTitle"></h1>
+  </div>
+  <div class="stages" id="stages"></div>
+  <div class="parent">
+    <button class="hold-btn" id="parentHold"><span class="fill"></span>👩 부모님: 2초 동안 꾹 누르기</button>
+    <div class="parent-panel" id="parentPanel">
+      <button id="editDoll">인형 바꾸기</button>
+      <button id="restToggle"></button>
+      <button id="openAll">모든 단계 열기</button>
+      <button id="resetAll">처음부터 다시</button>
+      <button id="closeParent">닫기</button>
+    </div>
+  </div>
+</section>
+
+<!-- 5. 놀이 화면 -->
+<section class="screen" id="game">
+  <div class="top">
+    <button class="round-btn" id="backBtn" aria-label="처음으로">🏠</button>
+    <div class="dots" id="dots"></div>
+    <button class="round-btn" id="sayBtn" aria-label="다시 듣기">🔊</button>
+  </div>
+  <div class="ask">
+    <div class="doll" id="askDoll"></div>
+    <div class="bubble" id="bubble"></div>
+  </div>
+  <div class="play" id="play"></div>
+  <div class="choices" id="choices"></div>
+</section>
+
+<!-- 6. 단계 끝 화면: 주황 = 한 번 더, 파랑 = 다음 (색으로만) -->
+<section class="screen center" id="clear">
+  <div class="clear-top">
+    <button class="round-btn" id="homeBtn" aria-label="처음으로">🏠</button>
+  </div>
+  <div class="clear-body">
+    <div class="new-sticker" id="newSticker"></div>
+    <h2 id="clearTitle">다 했다!</h2>
+    <p id="clearSub"></p>
+  </div>
+  <div class="clear-btns">
+    <button class="color-btn again" id="againBtn" aria-label="한 번 더"></button>
+    <button class="color-btn next" id="nextBtn" aria-label="다음 놀이"></button>
+  </div>
+</section>
+
+<!-- 7. 스티커 모음책 -->
+<section class="screen" id="stickers">
+  <div class="top">
+    <button class="round-btn" id="bookBack" aria-label="처음으로">🏠</button>
+    <div style="flex:1;text-align:center;font-size:24px;color:var(--pink-dark)">스티커 모음책</div>
+    <div style="width:60px"></div>
+  </div>
+  <p style="text-align:center;color:var(--muted);margin:12px 0 0" id="bookCount"></p>
+  <div class="book" id="book"></div>
+</section>
+
+<!-- 8. 쉬는 시간 -->
+<section class="screen center rest" id="rest">
+  <div class="zzz" aria-hidden="true">💤</div>
+  <div class="doll" id="restDoll"></div>
+  <h2 id="restTitle"></h2>
+  <p>오늘은 여기까지! 내일 또 만나요.</p>
+  <div class="bottom" style="margin-top:24px">
+    <button class="hold-btn" id="restHold"><span class="fill"></span>👩 부모님: 2초 꾹 누르면 더 놀 수 있어요</button>
+  </div>
+</section>
+
+<!-- 칭찬 -->
+<div class="overlay" id="overlay">
+  <div class="cheer">
+    <div class="doll" id="cheerDoll"></div>
+    <div class="say" id="cheerSay"></div>
+    <div class="big" id="cheerBig"></div>
+  </div>
+</div>
+
+<script src="js/logic.js"></script>
+<script src="js/core.js"></script>
+<script src="js/stages.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

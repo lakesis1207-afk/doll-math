@@ -1,0 +1,16 @@
+{
+  "name": "인형이랑 수학 놀이",
+  "short_name": "수학 놀이",
+  "description": "4~5세 아이가 애착인형과 함께 1부터 100까지 수를 배우는 놀이",
+  "lang": "ko",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#fff6f9",
+  "theme_color": "#ffe9f0",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
