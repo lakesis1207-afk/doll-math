@@ -450,49 +450,51 @@ function storySplit(s) {
 }
 
 // ---------- 7단계: 10개씩 묶기 (처음 11~30, 한 번 끝내면 11~100) ----------
-// 묶음도 낱개도 같은 10칸 틀(5칸 × 2줄)로: 꽉 찬 틀 = 10, 덜 찬 틀 = 낱개
-const FRAME_COLORS = ["#ff8fb1", "#5aa9f5", "#4fc9a4", "#ff9f6b", "#a685f5"];
+// 묶음 = 동물 10마리가 든 10칸 틀, 낱개 = 틀 밖에 조금 더 크게 (문제마다 동물이 바뀌어요)
+const TEN_ANIMALS = [["🐥", "#ffc94d"], ["🐟", "#5aa9f5"], ["🐞", "#ff6b6b"], ["🐸", "#4fc9a4"], ["🐰", "#ff9fc4"]];
 const FRAME_EXTRA = 30;   // 틀 안 여백·테두리·칸 사이 (가로 합)
 const FRAME_EXTRA_H = 21; // 틀 안 여백·테두리·칸 사이 (세로 합)
 const FRAME_GAP = 10, FRAME_ROW_GAP = 22, FRAME_CELL_MAX = 40;
-// 화면 가로·세로에 다 들어가면서 칸이 가장 커지는 배치(한 줄에 1~3개)를 골라요
-function sizeFrames(area, frames) {
+const LOOSE_SCALE = 1.3, LOOSE_PAD = 12; // 낱개는 칸의 1.3배, 낱개 하나의 테두리+간격
+// 화면 가로·세로에 다 들어가면서 칸이 가장 커지는 배치(틀은 한 줄에 1~3개, 낱개는 1~2줄)를 골라요
+function sizeFrames(area, frames, ones) {
   area.style.setProperty("--cell", "4px"); // 틀이 공간을 밀어내지 않게 아주 작게 한 뒤 남은 공간을 재요
   const w = area.clientWidth, h = $("play").clientHeight;
   let best = { cols: 1, cell: 0 };
   for (let cols = 1; cols <= 3; cols++) {
     const rows = Math.ceil(frames / cols);
     const byW = ((w - FRAME_GAP * (cols - 1)) / cols - FRAME_EXTRA) / 5;
-    const byH = ((h - FRAME_ROW_GAP * (rows - 1)) / rows - FRAME_EXTRA_H) / 2;
-    const cell = Math.floor(Math.min(byW, byH, FRAME_CELL_MAX));
-    if (cell > best.cell) best = { cols, cell };
+    for (const lines of ones ? [1, 2] : [0]) {
+      const perLine = lines ? Math.ceil(ones / lines) : 0;
+      const byLooseW = lines ? (w / perLine - LOOSE_PAD) / LOOSE_SCALE : Infinity;
+      const fixedH = rows * FRAME_EXTRA_H + FRAME_ROW_GAP * (rows - 1) + (lines ? FRAME_ROW_GAP + lines * LOOSE_PAD : 0);
+      const byH = (h - fixedH) / (2 * rows + LOOSE_SCALE * lines);
+      const cell = Math.floor(Math.min(byW, byLooseW, byH, FRAME_CELL_MAX));
+      if (cell > best.cell) best = { cols, cell };
+    }
   }
   area.style.setProperty("--cols", best.cols);
   area.style.setProperty("--cell", best.cell + "px");
 }
-function tenFrame(filled, color) {
-  const f = el(filled === 10 ? "button" : "div", "frame");
-  const cells = range(0, 9).map(i => {
-    const c = el("i", i < filled ? "on" : "");
-    if (i < filled) c.style.background = color;
-    f.appendChild(c);
-    return c;
-  });
-  return { f, cells: cells.slice(0, filled) };
+function tenFrame(animal, tone) {
+  const f = el("button", "frame");
+  f.style.setProperty("--tone", tone);
+  range(0, 9).forEach(() => f.appendChild(el("i", "", animal)));
+  return f;
 }
 function qTens() {
   const maxN = firstTime() ? 30 : 100;
   const n = pickAnswer(() => rand(11, maxN));
   const tens = Math.floor(n / 10), ones = n % 10;
   Object.assign(G.current, { answer: n, answerKey: "n" + n });
-  const color = pick(FRAME_COLORS);
+  const [animal, tone] = pick(TEN_ANIMALS);
   let counted = 0;
   const count = step => { counted = Math.min(100, counted + step); say(["n" + counted]); return counted; };
   const area = el("div", "frames");
   $("play").appendChild(area);
   const full = range(1, tens).map(() => {
-    const { f } = tenFrame(10, color);
-    f.setAttribute("aria-label", "10개 묶음");
+    const f = tenFrame(animal, tone);
+    f.setAttribute("aria-label", "10마리 묶음");
     const tag = el("span", "ten", "10");
     f.appendChild(tag);
     f.onclick = () => {
@@ -504,22 +506,26 @@ function qTens() {
     area.appendChild(f);
     return f;
   });
-  let loose = [];
-  if (ones) {
-    const t = tenFrame(ones, color);
-    t.f.classList.add("loose-frame");
-    loose = t.cells;
-    loose.forEach(c => c.addEventListener("click", () => {
-      if (G.busy || c.classList.contains("counted")) return;
-      c.classList.add("counted");
+  const loose = range(1, ones).map(() => {
+    const one = el("button", "one", animal);
+    one.style.setProperty("--tone", tone);
+    one.setAttribute("aria-label", "낱개 한 마리");
+    one.onclick = () => {
+      if (G.busy || one.classList.contains("counted")) return;
+      one.classList.add("counted");
       sfx.tap();
       count(1);
-    }));
-    area.appendChild(t.f);
+    };
+    return one;
+  });
+  if (ones) {
+    const row = el("div", "loose");
+    row.append(...loose);
+    area.appendChild(row);
   }
-  ask("10개 묶음부터 세어 볼까? 모두 몇일까?", ["q3"]);
+  ask("열 마리 묶음에 몇 마리가 더 있지? 모두 몇 마리일까?", ["q3"]);
   choiceButtons(L.tensChoices(n));
-  sizeFrames(area, tens + (ones ? 1 : 0)); // 보기 버튼까지 놓은 뒤 남은 공간으로 크기 정하기
+  sizeFrames(area, tens, ones); // 보기 버튼까지 놓은 뒤 남은 공간으로 크기 정하기
   showDemo(full[0]);
   G.current.together = async () => {
     G.busy = true;

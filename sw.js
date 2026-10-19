@@ -1,6 +1,6 @@
 // 인터넷 없이도 앱이 열리도록 파일을 휴대폰에 저장해 두는 일꾼(서비스 워커)
 // 앱 파일을 고치면 VERSION 숫자를 올려 주세요. 그래야 새 파일로 바뀌어요.
-const VERSION = "v4";
+const VERSION = "v5";
 const CACHE = "kkokkori-math-" + VERSION;
 
 const sounds = [];

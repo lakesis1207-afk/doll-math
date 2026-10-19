@@ -205,16 +205,16 @@ button:focus-visible { outline: 3px solid var(--pink-dark); outline-offset: 2px;
 .total-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; background: #fff; border-radius: 22px; padding: 8px 14px; box-shadow: var(--shadow); }
 .total-row span { font-size: 36px; line-height: 1.1; }
 
-/* 7. 10개씩 묶기: 10칸 틀 (꽉 찬 틀 = 10, 덜 찬 틀 = 낱개) */
+/* 7. 10개씩 묶기: 동물 10마리 틀 = 10, 틀 밖의 큰 동물 = 낱개 */
 .frames { display: grid; grid-template-columns: repeat(var(--cols, 2), auto); justify-content: center; gap: 22px 10px; align-content: center; width: 100%; }
-.frame { background: #fff; border-radius: 14px; padding: 6px; border: 3px solid transparent; box-shadow: var(--shadow); position: relative; display: grid; grid-template-columns: repeat(5, var(--cell, 26px)); gap: 3px; transition: border-color .2s; }
-.frame i { width: var(--cell, 26px); height: var(--cell, 26px); border-radius: 22%; border: 2px dashed #e6dbe2; }
-.frame i.on { border: 0; box-shadow: inset 0 -3px 0 rgba(0,0,0,.12); }
-.frame i.counted { outline: 3px solid var(--sun); outline-offset: 1px; }
-.frame.loose-frame i.on { cursor: pointer; }
+.frame { background: #fff; border-radius: 14px; padding: 6px; border: 3px solid var(--tone, transparent); box-shadow: var(--shadow); position: relative; display: grid; grid-template-columns: repeat(5, var(--cell, 26px)); gap: 3px; transition: border-color .2s; }
+.frame i { width: var(--cell, 26px); height: var(--cell, 26px); border-radius: 22%; background: color-mix(in srgb, var(--tone) 22%, #fff); font-style: normal; font-size: calc(var(--cell, 26px) * .78); line-height: var(--cell, 26px); text-align: center; }
 .frame .ten { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); background: var(--sky); color: #fff; border-radius: 12px; padding: 0 10px; font-size: 17px; line-height: 26px; white-space: nowrap; }
 .frame.counted { border-color: var(--sun); }
 .frame.counted .ten { background: var(--sun); color: var(--ink); }
+.loose { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.one { width: calc(var(--cell, 26px) * 1.3); height: calc(var(--cell, 26px) * 1.3); border: 2px solid var(--tone); border-radius: 26%; background: color-mix(in srgb, var(--tone) 22%, #fff); box-shadow: var(--shadow); font-size: calc(var(--cell, 26px) * 1.02); line-height: 1; padding: 0; display: grid; place-items: center; }
+.one.counted { outline: 3px solid var(--sun); outline-offset: 2px; }
 
 /* 8. 100판 숫자 찾기 */
 .target-card { background: #fff; border-radius: 22px; padding: 4px 30px; font-size: 60px; color: var(--pink-dark); box-shadow: var(--shadow); }
