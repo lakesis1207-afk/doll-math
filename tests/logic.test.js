@@ -78,3 +78,46 @@ test("rowOf는 1~100을 0~9 줄로 나눈다", () => {
   assert.strictEqual(L.rowOf(11), 1);
   assert.strictEqual(L.rowOf(100), 9);
 });
+
+test("randomDollName: 후보 중 하나", () => {
+  assert.strictEqual(L.randomDollName(() => 0), "토토");
+  assert.strictEqual(L.randomDollName(() => 0.999), "호두");
+  for (let i = 0; i < 50; i++) assert.ok(L.DOLL_NAMES.includes(L.randomDollName()));
+});
+
+test("backTarget: 뒤로가기로 갈 화면", () => {
+  const set = { setup: true, overlay: false }, first = { setup: false, overlay: false };
+  assert.strictEqual(L.backTarget("game", set), "home");
+  assert.strictEqual(L.backTarget("clear", set), "home");
+  assert.strictEqual(L.backTarget("stickers", set), "home");
+  assert.strictEqual(L.backTarget("intro", set), "home");
+  assert.strictEqual(L.backTarget("intro", first), "exit");
+  assert.strictEqual(L.backTarget("photos", set), "home");
+  assert.strictEqual(L.backTarget("photos", first), "intro");
+  assert.strictEqual(L.backTarget("naming", first), "photos");
+  assert.strictEqual(L.backTarget("home", set), "exit");
+  assert.strictEqual(L.backTarget("rest", set), "exit");
+  assert.strictEqual(L.backTarget("game", { setup: true, overlay: true }), "stay");
+});
+
+test("resumeScore: 오늘, 같은 단계, 1개 이상일 때만 이어 하기", () => {
+  const p = { stage: 2, score: 3, date: "Mon" };
+  assert.strictEqual(L.resumeScore(p, 2, "Mon"), 3);
+  assert.strictEqual(L.resumeScore(p, 1, "Mon"), 0);
+  assert.strictEqual(L.resumeScore(p, 2, "Tue"), 0);
+  assert.strictEqual(L.resumeScore(null, 2, "Mon"), 0);
+  assert.strictEqual(L.resumeScore({ stage: 2, score: 0, date: "Mon" }, 2, "Mon"), 0);
+});
+
+test("바구니 이야기: 나올 수 있는 모든 문장의 녹음 파일이 있음", () => {
+  const fs = require("fs"), path = require("path");
+  const have = new Set(fs.readdirSync(path.join(__dirname, "../sounds")).map(f => f.replace(/\.mp3$/, "")));
+  const need = new Set(["add_q", "sub_q", "split_q"]);
+  for (let i = 0; i < 3000; i++) {
+    const s = L.makeStory(["add", "sub", "split"][i % 3]);
+    if (s.kind === "add") ["apple", "strawberry", "tangerine", "carrot", "cookie"].forEach(f => need.add(`add_${f}${s.a}`)), need.add("add_more" + s.b);
+    if (s.kind === "sub") need.add("sub_start" + s.a), need.add("sub_jump" + s.b);
+    if (s.kind === "split") need.add("split_all" + s.total), need.add("split_here" + s.a);
+  }
+  assert.deepStrictEqual([...need].filter(k => !have.has(k)), []);
+});

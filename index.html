@@ -67,6 +67,7 @@
   </div>
   <div class="bottom">
     <button class="pill wide" id="introNext">인형 등록하기 ▶</button>
+    <button class="link" id="introSkip" hidden>나중에 할게요</button>
   </div>
 </section>
 
@@ -100,6 +101,7 @@
   <input class="name-input" id="nameInput" type="text" maxlength="12" placeholder="예: 토토" autocomplete="off" enterkeyhint="done">
   <div class="bottom">
     <button class="pill wide" id="nameNext" disabled>다 했어요 ▶</button>
+    <button class="link" id="nameSkip">이름 없이 하기</button>
   </div>
 </section>
 
@@ -114,8 +116,9 @@
   <div class="stages" id="stages"></div>
   <div class="parent">
     <button class="hold-btn" id="parentHold"><span class="fill"></span>👩 부모님: 2초 동안 꾹 누르기</button>
+    <p class="reg-hint" id="regHint" hidden>👩 부모님 버튼을 2초 누르면 인형을 등록할 수 있어요</p>
     <div class="parent-panel" id="parentPanel">
-      <button id="editDoll">인형 바꾸기</button>
+      <button id="editDoll">인형 등록·바꾸기</button>
       <button id="restToggle"></button>
       <button id="openAll">모든 단계 열기</button>
       <button id="resetAll">처음부터 다시</button>
@@ -185,6 +188,9 @@
     <div class="big" id="cheerBig"></div>
   </div>
 </div>
+
+<!-- 뒤로가기 안내 -->
+<div class="toast" id="toast" role="status"></div>
 
 <script src="js/logic.js"></script>
 <script src="js/core.js"></script>

@@ -79,9 +79,31 @@
   // 주사위 점 자리 (3×3 칸 번호)
   const DICE = { 1: [4], 2: [0, 8], 3: [0, 4, 8], 4: [0, 2, 6, 8], 5: [0, 2, 4, 6, 8] };
 
+  // ---------- 인형 이름 (등록을 건너뛰면 하나 골라 줌) ----------
+  const DOLL_NAMES = ["토토", "몽이", "콩이", "보리", "뽀미", "꼬미", "단추", "호두"];
+  const randomDollName = (rnd = Math.random) => DOLL_NAMES[Math.floor(rnd() * DOLL_NAMES.length) % DOLL_NAMES.length];
+
+  // ---------- 휴대폰 뒤로가기: 지금 화면에서 어디로 갈지 ----------
+  // "home" | "intro" | "photos" | "exit"(한 번 더 누르면 나가기) | "stay"(아무것도 안 함)
+  function backTarget(screen, { setup, overlay }) {
+    if (overlay) return "stay";
+    if (screen === "game" || screen === "clear" || screen === "stickers") return "home";
+    if (screen === "intro") return setup ? "home" : "exit";
+    if (screen === "photos") return setup ? "home" : "intro";
+    if (screen === "naming") return "photos";
+    return "exit"; // 처음 화면, 쉬는 시간
+  }
+
+  // ---------- 이어 하기: 오늘 저장한 진도만 이어서 ----------
+  function resumeScore(progress, stage, today) {
+    if (!progress || progress.stage !== stage || progress.date !== today) return 0;
+    return progress.score > 0 ? progress.score : 0;
+  }
+
   const Logic = {
     rand, pick, shuffle, range, hasBatchim, josa, sinoWord, numJosa,
     nearChoices, tensChoices, makePattern, makeStory, rowOf, DICE, PATTERN_SETS,
+    DOLL_NAMES, randomDollName, backTarget, resumeScore,
   };
   if (typeof module !== "undefined" && module.exports) module.exports = Logic;
   else root.Logic = Logic;

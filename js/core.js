@@ -23,12 +23,15 @@ const STAGE_COUNT = 8;
 const settings = {
   setup: false, name: "", unlocked: 1, stars: new Array(STAGE_COUNT).fill(0),
   stickers: [], restOn: true, playDate: "", playedMs: 0,
+  progress: null, // 이어 하기: { stage, score, date } (오늘 하던 단계와 맞힌 개수)
 };
 try { Object.assign(settings, JSON.parse(localStorage.getItem(KEY)) || {}); } catch (e) { /* 저장된 기록이 없거나 깨졌으면 새로 시작 */ }
 if (!Array.isArray(settings.stars) || settings.stars.length !== STAGE_COUNT) {
   settings.stars = new Array(STAGE_COUNT).fill(0);
   settings.unlocked = 1;
 }
+// 예전 버전 사용자는 이름을 꼭 정해야 했으니 이미 등록한 것으로 봐요
+if (typeof settings.registered !== "boolean") settings.registered = !!settings.setup;
 function saveSettings() {
   try { localStorage.setItem(KEY, JSON.stringify(settings)); } catch (e) { /* 저장 공간이 막힌 브라우저: 이번 놀이만 기억 */ }
 }
@@ -138,7 +141,7 @@ function playBuf(ctx, buf) {
     src.start();
   });
 }
-// 클로바더빙 녹음 조각들을 차례로 틀기 (예: ["add_apple", "g3", "add_more"])
+// 클로바더빙 녹음 조각들을 차례로 틀기 (예: ["add_apple3", "add_more2", "add_q"])
 async function say(keys) {
   stopSay();
   const my = sayToken;

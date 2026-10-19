@@ -184,9 +184,9 @@ button:focus-visible { outline: 3px solid var(--pink-dark); outline-offset: 2px;
 .side.right { border-color: var(--sun); background: #fffaf0; }
 
 /* 5. 무늬 잇기 */
-.pattern { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; background: #fff; border-radius: 26px; padding: 16px 10px; box-shadow: var(--shadow); width: 100%; }
-.pattern span { font-size: 46px; line-height: 1; width: 58px; height: 58px; display: grid; place-items: center; border-radius: 14px; transition: background .2s; }
-.pattern span.blank { border: 4px dashed var(--pink); color: var(--pink-dark); font-size: 36px; }
+.pattern { display: flex; flex-wrap: nowrap; justify-content: center; gap: 4px; background: #fff; border-radius: 26px; padding: 16px 10px; box-shadow: var(--shadow); width: 100%; }
+.pattern span { --c: var(--cell, 58px); font-size: calc(var(--c) * .8); line-height: 1; width: var(--c); height: var(--c); flex: none; display: grid; place-items: center; border-radius: 14px; transition: background .2s; }
+.pattern span.blank { border: 3px dashed var(--pink); color: var(--pink-dark); font-size: calc(var(--c) * .6); }
 .pattern span.unit-a { background: #fff3c4; }
 .pattern span.unit-b { background: #e3f1ff; }
 .choice.emoji { font-size: 60px; }
@@ -205,16 +205,16 @@ button:focus-visible { outline: 3px solid var(--pink-dark); outline-offset: 2px;
 .total-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; background: #fff; border-radius: 22px; padding: 8px 14px; box-shadow: var(--shadow); }
 .total-row span { font-size: 36px; line-height: 1.1; }
 
-/* 7. 10개씩 묶기 */
-.bundle-area { display: flex; flex-direction: column; align-items: center; gap: 18px; width: 100%; }
-.bundles { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 20px 10px; width: 100%; justify-items: center; }
-.bundle { background: #fff; border-radius: 18px; padding: 8px; box-shadow: var(--shadow); position: relative; display: grid; grid-template-columns: repeat(5, 13px); gap: 4px; border: 4px solid transparent; transition: border-color .2s; }
-.bundle i { width: 13px; height: 13px; border-radius: 50%; }
-.bundle .ten { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); background: var(--sky); color: #fff; border-radius: 12px; padding: 0 10px; font-size: 17px; line-height: 26px; white-space: nowrap; }
-.bundle.counted { border-color: var(--sun); }
-.bundle.counted .ten { background: var(--sun); color: var(--ink); }
-.loose { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 320px; }
-.loose .kk { width: 56px; height: 56px; font-size: 46px; }
+/* 7. 10개씩 묶기: 10칸 틀 (꽉 찬 틀 = 10, 덜 찬 틀 = 낱개) */
+.frames { display: grid; grid-template-columns: repeat(var(--cols, 2), auto); justify-content: center; gap: 22px 10px; align-content: center; width: 100%; }
+.frame { background: #fff; border-radius: 14px; padding: 6px; border: 3px solid transparent; box-shadow: var(--shadow); position: relative; display: grid; grid-template-columns: repeat(5, var(--cell, 26px)); gap: 3px; transition: border-color .2s; }
+.frame i { width: var(--cell, 26px); height: var(--cell, 26px); border-radius: 22%; border: 2px dashed #e6dbe2; }
+.frame i.on { border: 0; box-shadow: inset 0 -3px 0 rgba(0,0,0,.12); }
+.frame i.counted { outline: 3px solid var(--sun); outline-offset: 1px; }
+.frame.loose-frame i.on { cursor: pointer; }
+.frame .ten { position: absolute; left: 50%; bottom: -15px; transform: translateX(-50%); background: var(--sky); color: #fff; border-radius: 12px; padding: 0 10px; font-size: 17px; line-height: 26px; white-space: nowrap; }
+.frame.counted { border-color: var(--sun); }
+.frame.counted .ten { background: var(--sun); color: var(--ink); }
 
 /* 8. 100판 숫자 찾기 */
 .target-card { background: #fff; border-radius: 22px; padding: 4px 30px; font-size: 60px; color: var(--pink-dark); box-shadow: var(--shadow); }
@@ -257,3 +257,9 @@ button:focus-visible { outline: 3px solid var(--pink-dark); outline-offset: 2px;
   *, *::before, *::after { animation-duration: .01s !important; transition: none !important; }
   .balloon { animation-duration: 40s !important; }
 }
+
+/* 뒤로가기 안내 / 인형 등록 안내 / 이어 하기 표시 */
+.toast { position: fixed; left: 50%; bottom: max(28px, env(safe-area-inset-bottom)); transform: translate(-50%, 20px); background: rgba(74,59,71,.92); color: #fff; padding: 12px 22px; border-radius: 999px; font-size: 18px; opacity: 0; pointer-events: none; transition: opacity .25s, transform .25s; z-index: 30; white-space: nowrap; }
+.toast.on { opacity: 1; transform: translate(-50%, 0); }
+.reg-hint { margin: 0; font-size: 14px; color: var(--muted); text-align: center; }
+.tile .resume { position: absolute; left: 46px; top: 13px; background: var(--go-next); color: #fff; font-size: 13px; border-radius: 10px; padding: 1px 8px; }

@@ -2,6 +2,7 @@
 function show(id) {
   if (id !== "game") pauseClock();
   document.querySelectorAll(".screen").forEach(s => s.classList.toggle("on", s.id === id));
+  armBack();
   window.scrollTo(0, 0);
 }
 function goHome(withVoice) {
@@ -21,7 +22,15 @@ $("introNext").onclick = () => {
   if (settings.setup) goHome(false);
   else { renderSlots(); show("photos"); }
 };
-$("helpBtn").onclick = () => { $("introNext").textContent = "닫기"; show("intro"); };
+$("helpBtn").onclick = () => { $("introNext").textContent = "닫기"; $("introSkip").hidden = true; show("intro"); };
+// 인형 등록은 나중에: 곰 인형 그림 + 랜덤 이름으로 시작 (이름은 한 번만 정해서 저장)
+function skipSetup() {
+  Object.assign(settings, { name: settings.name || L.randomDollName(), setup: true });
+  saveSettings();
+  $("nameInput").blur();
+  goHome(true);
+}
+$("introSkip").onclick = skipSetup;
 
 // ---------- 2. 사진 찍기 ----------
 let slotTarget = 0;
@@ -90,6 +99,7 @@ $("nameInput").addEventListener("keydown", e => { if (e.key === "Enter" && !$("n
 $("nameNext").onclick = () => {
   settings.name = $("nameInput").value.trim();
   settings.setup = true;
+  settings.registered = true;
   saveSettings();
   $("nameInput").blur();
   goHome(true);
@@ -101,9 +111,11 @@ function stageTile(s, i) {
   const open = parentMode || i < settings.unlocked;
   const b = el("button", "tile" + (open ? "" : " locked"));
   const stars = settings.stars[i] || 0;
+  const resume = L.resumeScore(settings.progress, i, today());
   b.innerHTML = `
     <span class="no" style="background:${s.color}">${open ? i + 1 : "🔒"}</span>
     <span class="stars">${stars ? "⭐".repeat(Math.min(stars, 3)) : ""}</span>
+    ${resume ? `<span class="resume">▶ ${resume}/${GOAL}</span>` : ""}
     <span class="ico">${s.ico}</span>
     <b>${s.name}</b><small>${s.sub}</small>`;
   b.onclick = () => {
@@ -121,8 +133,11 @@ function renderHome() {
   const box = $("stages");
   box.innerHTML = "";
   STAGES.forEach((s, i) => box.appendChild(stageTile(s, i)));
-  // 아직 한 번도 안 했으면 1단계를 손가락으로 가리켜요
-  if (settings.stars.every(n => !n)) setTimeout(() => { if ($("home").classList.contains("on")) demoHand(box.firstChild); }, 700);
+  $("regHint").hidden = settings.registered || photoUrls().length > 0;
+  // 하던 단계가 있으면 그 칸을, 아직 한 번도 안 했으면 1단계를 손가락으로 가리켜요
+  const resumeAt = STAGES.findIndex((_, i) => L.resumeScore(settings.progress, i, today()) > 0);
+  const pointAt = resumeAt >= 0 ? box.children[resumeAt] : settings.stars.every(n => !n) ? box.firstChild : null;
+  if (pointAt) setTimeout(() => { if ($("home").classList.contains("on")) demoHand(pointAt); }, 700);
 }
 $("heroPhoto").onclick = () => {
   sfx.tap();
@@ -160,6 +175,7 @@ $("resetAll").onclick = () => {
   closeParent();
 };
 $("closeParent").onclick = closeParent;
+$("nameSkip").onclick = skipSetup;
 
 // ---------- 스티커 모음책 ----------
 $("bookBtn").onclick = () => {
@@ -189,7 +205,10 @@ holdButton($("restHold"), () => {
 
 // ---------- 놀이 시작 / 끝 ----------
 function startStage(i) {
-  Object.assign(G, { stage: i, score: 0, lastAnswer: null });
+  // 오늘 하던 진도가 있으면 이어서, 다른 단계를 시작하면 이어 하기 기록은 지워요
+  const resume = L.resumeScore(settings.progress, i, today());
+  if (!resume && settings.progress) { settings.progress = null; saveSettings(); }
+  Object.assign(G, { stage: i, score: resume, lastAnswer: null });
   if (settings.playDate !== today()) { settings.playDate = today(); settings.playedMs = 0; }
   if (tired()) { goRest(); return; }
   show("game");
@@ -208,6 +227,7 @@ function finishStage() {
     stars: settings.stars.map((n, i) => i === stage ? (n || 0) + 1 : n),
     unlocked: opened ? stage + 2 : settings.unlocked,
     stickers: got ? [...settings.stickers, got] : settings.stickers,
+    progress: null,
   });
   saveSettings();
   show("clear");
@@ -238,6 +258,38 @@ document.addEventListener("visibilitychange", () => {
   else if ($("game").classList.contains("on")) startClock();
 });
 
+// ---------- 휴대폰 뒤로가기: 앱이 꺼지지 않고 앞 화면으로 ----------
+// 방문 기록을 하나 더 쌓아 두고, 뒤로가기로 그게 빠지면 앞 화면으로 보내고 다시 쌓아요.
+const EXIT_WINDOW = 2000; // 처음 화면에서 이 시간 안에 한 번 더 누르면 나가요
+let exitTimer = null;
+function armBack() {
+  if (!history.state || history.state.kk !== "top") history.pushState({ kk: "top" }, "");
+}
+function toast(msg) {
+  const t = $("toast");
+  t.textContent = msg;
+  t.classList.add("on");
+  clearTimeout(toast.t);
+  toast.t = setTimeout(() => t.classList.remove("on"), EXIT_WINDOW);
+}
+window.addEventListener("popstate", () => {
+  const screen = (document.querySelector(".screen.on") || {}).id;
+  const to = L.backTarget(screen, { setup: settings.setup, overlay: $("overlay").classList.contains("on") });
+  if (to === "exit") {
+    // 기록을 다시 쌓지 않고 기다려요: 2초 안에 또 누르면 그대로 앱에서 나가요
+    toast("한 번 더 누르면 나가요");
+    clearTimeout(exitTimer);
+    exitTimer = setTimeout(armBack, EXIT_WINDOW);
+    return;
+  }
+  if (to === "home") goHome(true);
+  else if (to === "intro") show("intro");
+  else if (to === "photos") { renderSlots(); show("photos"); }
+  armBack();
+});
+history.replaceState({ kk: "base" }, "");
+armBack();
+
 // ---------- 시작 ----------
 (async () => {
   for (let i = 0; i < MAX_PHOTOS; i++) {
@@ -245,7 +297,7 @@ document.addEventListener("visibilitychange", () => {
     if (b) photos[i] = { blob: b, url: URL.createObjectURL(b) };
   }
   if (settings.setup) goHome(false);
-  else show("intro");
+  else { $("introSkip").hidden = false; show("intro"); }
 })();
 
 // 홈 화면 앱(PWA): 인터넷 없이도 열리게 파일을 저장해 둠

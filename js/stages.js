@@ -111,10 +111,17 @@ function choiceButtons(values, emoji = false) {
   G.current.glow = G.current.glow || (() => [...box.children].find(b => b.dataset.v === String(G.current.answer)));
 }
 
+// 이어 하기: 맞힐 때마다 오늘 진도 저장 (단계를 다 하면 finishStage에서 지움)
+function saveProgress() {
+  settings.progress = G.score < GOAL ? { stage: G.stage, score: G.score, date: today() } : null;
+  saveSettings();
+}
+
 async function correct() {
   G.busy = true;
   stopSay();
   G.score++;
+  saveProgress();
   renderDots();
   sfx.right();
   const pi = praiseIndex();
@@ -293,6 +300,12 @@ function qCompare() {
 }
 
 // ---------- 5단계: 무늬 잇기 (뒤의 문제는 3가지 무늬) ----------
+// 줄이 넘어가면 반복이 안 보여서, 칸 수에 맞춰 칸 크기를 줄여 항상 한 줄로
+const PATTERN_CELL_MAX = 58, PATTERN_GAP = 4, PATTERN_PAD = 20;
+function fitRow(row, count) {
+  const room = row.clientWidth - PATTERN_PAD - PATTERN_GAP * (count - 1);
+  row.style.setProperty("--cell", Math.min(PATTERN_CELL_MAX, Math.floor(room / count)) + "px");
+}
 function qPattern() {
   const p = pickAnswer(() => L.makePattern(G.score >= 3));
   Object.assign(G.current, { answer: p.answer, answerKey: null });
@@ -301,6 +314,7 @@ function qPattern() {
   const blank = el("span", "blank", "?");
   row.append(...cells, blank);
   $("play").appendChild(row);
+  fitRow(row, cells.length + 1);
   ask("다음에는 무엇이 올까?", ["pattern"]);
   choiceButtons(p.options, true);
   // 같이 보기: 반복되는 묶음마다 색을 칠해서 보여 주기
@@ -314,10 +328,10 @@ function qPattern() {
 }
 
 // ---------- 6단계: 바구니 더하기·빼기 (그림을 보며 세어서 풀기) ----------
-// 이야기는 녹음 조각을 이어서 들려줘요: "바구니에 딸기가 있어요." + "네 개!" + "더 넣어요!" ...
+// 이야기는 숫자까지 들어간 문장째 녹음을 들려줘요: "바구니에 딸기가 네 개 있어요." (add_strawberry4)
 const FRUITS = [
-  ["🍎", "사과", "add_apple"], ["🍓", "딸기", "add_strawberry"], ["🍊", "귤", "add_tangerine"],
-  ["🥕", "당근", "add_carrot"], ["🍪", "쿠키", "add_cookie"],
+  ["🍎", "사과", "apple"], ["🍓", "딸기", "strawberry"], ["🍊", "귤", "tangerine"],
+  ["🥕", "당근", "carrot"], ["🍪", "쿠키", "cookie"],
 ];
 function tokenRow(cls, emoji, count) {
   return range(1, count).map(() => {
@@ -370,17 +384,18 @@ async function storyAdd(s) {
   $("play").appendChild(basket);
   const q = G.current;
   G.busy = true;
-  $("bubble").textContent = `바구니에 ${josa(word, "이", "가")} ${s.a}개 있어요. ${s.b}개 더 넣어요!`;
-  await say([key, "g" + s.a]);
+  const startKey = `add_${key}${s.a}`, moreKey = "add_more" + s.b;
+  $("bubble").textContent = `바구니에 ${josa(word, "이", "가")} ${s.a}개 있어요. ${s.b}개를 더 넣어요.`;
+  await say([startKey]);
   if (G.current !== q) return;
   const more = tokenRow("drop", emoji, s.b);
   const drop = t => { basket.appendChild(t); sfx.drop(); };
-  await Promise.all([say(["add_more", "g" + s.b]), animateEach(more, q, drop, 380)]);
+  await Promise.all([say([moreKey]), animateEach(more, q, drop, 380)]);
   if (G.current !== q) return;
   G.busy = false;
   const all = [...first, ...more];
   makeCountable(all);
-  askAfterStory("모두 몇 개일까?", "add_q", [key, "g" + s.a, "add_more", "g" + s.b]);
+  askAfterStory("모두 몇 개일까?", "add_q", [startKey, moreKey]);
   q.together = async () => {
     all.forEach(t => t.classList.remove("counted"));
     await countTogether(all, k => "c" + k);
@@ -395,16 +410,16 @@ async function storySub(s) {
   $("play").appendChild(pond);
   const q = G.current;
   G.busy = true;
-  $("bubble").textContent = `연못에 개구리가 ${s.a}마리 있어요. 퐁당! ${s.b}마리가 뛰어갔어요.`;
-  await say(["sub_start", "m" + s.a]);
+  $("bubble").textContent = `연못에 개구리가 ${s.a}마리 있어요. ${s.b}마리가 퐁당 뛰어갔어요.`;
+  await say(["sub_start" + s.a]);
   if (G.current !== q) return;
   const hop = f => { f.classList.add("gone"); sfx.hop(); };
-  await Promise.all([say(["sub_jump", "m" + s.b]), animateEach(frogs.slice(-s.b), q, hop, 420)]);
+  await Promise.all([say(["sub_jump" + s.b]), animateEach(frogs.slice(-s.b), q, hop, 420)]);
   if (G.current !== q) return;
   G.busy = false;
   const left = frogs.slice(0, s.a - s.b);
   makeCountable(left);
-  askAfterStory("몇 마리 남았을까?", "sub_q", ["sub_start", "m" + s.a, "sub_jump", "m" + s.b]);
+  askAfterStory("몇 마리 남았을까?", "sub_q", ["sub_start" + s.a, "sub_jump" + s.b]);
   q.together = async () => {
     left.forEach(t => t.classList.remove("counted"));
     await countTogether(left, k => "c" + k);
@@ -425,8 +440,8 @@ function storySplit(s) {
   right.appendChild(cover);
   two.append(left, right);
   $("play").append(total, two);
-  ask(`모두 합하면 ${s.total}개! 이쪽 접시에는 ${s.a}개! 저쪽 접시에는 몇 개 있을까?`,
-    ["split_all", "g" + s.total, "split_here", "g" + s.a, "split_q"]);
+  ask(`모두 ${s.total}개 있어요. 이쪽 접시에 ${s.a}개 있어요. 저쪽 접시에는 몇 개 있을까?`,
+    ["split_all" + s.total, "split_here" + s.a, "split_q"]);
   G.current.together = async () => {
     cover.hidden = true;
     await countTogether(hidden, k => "c" + k);
@@ -435,50 +450,87 @@ function storySplit(s) {
 }
 
 // ---------- 7단계: 10개씩 묶기 (처음 11~30, 한 번 끝내면 11~100) ----------
-function bundle(color, onCount) {
-  const b = el("button", "bundle");
-  b.setAttribute("aria-label", "10개 묶음");
-  for (let i = 0; i < 10; i++) { const d = el("i"); d.style.background = color; b.appendChild(d); }
-  const tag = el("span", "ten", "10");
-  b.appendChild(tag);
-  b.onclick = () => {
-    if (G.busy || b.classList.contains("counted")) return;
-    b.classList.add("counted");
-    sfx.tap();
-    tag.textContent = onCount();
-  };
-  return b;
+// 묶음도 낱개도 같은 10칸 틀(5칸 × 2줄)로: 꽉 찬 틀 = 10, 덜 찬 틀 = 낱개
+const FRAME_COLORS = ["#ff8fb1", "#5aa9f5", "#4fc9a4", "#ff9f6b", "#a685f5"];
+const FRAME_EXTRA = 30;   // 틀 안 여백·테두리·칸 사이 (가로 합)
+const FRAME_EXTRA_H = 21; // 틀 안 여백·테두리·칸 사이 (세로 합)
+const FRAME_GAP = 10, FRAME_ROW_GAP = 22, FRAME_CELL_MAX = 40;
+// 화면 가로·세로에 다 들어가면서 칸이 가장 커지는 배치(한 줄에 1~3개)를 골라요
+function sizeFrames(area, frames) {
+  area.style.setProperty("--cell", "4px"); // 틀이 공간을 밀어내지 않게 아주 작게 한 뒤 남은 공간을 재요
+  const w = area.clientWidth, h = $("play").clientHeight;
+  let best = { cols: 1, cell: 0 };
+  for (let cols = 1; cols <= 3; cols++) {
+    const rows = Math.ceil(frames / cols);
+    const byW = ((w - FRAME_GAP * (cols - 1)) / cols - FRAME_EXTRA) / 5;
+    const byH = ((h - FRAME_ROW_GAP * (rows - 1)) / rows - FRAME_EXTRA_H) / 2;
+    const cell = Math.floor(Math.min(byW, byH, FRAME_CELL_MAX));
+    if (cell > best.cell) best = { cols, cell };
+  }
+  area.style.setProperty("--cols", best.cols);
+  area.style.setProperty("--cell", best.cell + "px");
+}
+function tenFrame(filled, color) {
+  const f = el(filled === 10 ? "button" : "div", "frame");
+  const cells = range(0, 9).map(i => {
+    const c = el("i", i < filled ? "on" : "");
+    if (i < filled) c.style.background = color;
+    f.appendChild(c);
+    return c;
+  });
+  return { f, cells: cells.slice(0, filled) };
 }
 function qTens() {
   const maxN = firstTime() ? 30 : 100;
   const n = pickAnswer(() => rand(11, maxN));
   const tens = Math.floor(n / 10), ones = n % 10;
   Object.assign(G.current, { answer: n, answerKey: "n" + n });
-  const color = pick(["#ff8fb1", "#5aa9f5", "#4fc9a4", "#ff9f6b", "#a685f5"]);
+  const color = pick(FRAME_COLORS);
   let counted = 0;
   const count = step => { counted = Math.min(100, counted + step); say(["n" + counted]); return counted; };
-  const bundles = range(1, tens).map(() => bundle(color, () => count(10)));
-  const loose = range(0, ones - 1).map(i => countDoll(i, () => count(1)));
-  const area = el("div", "bundle-area");
-  const grid = el("div", "bundles");
-  grid.append(...bundles);
-  area.appendChild(grid);
-  if (loose.length) { const box = el("div", "loose"); box.append(...loose); area.appendChild(box); }
+  const area = el("div", "frames");
   $("play").appendChild(area);
+  const full = range(1, tens).map(() => {
+    const { f } = tenFrame(10, color);
+    f.setAttribute("aria-label", "10개 묶음");
+    const tag = el("span", "ten", "10");
+    f.appendChild(tag);
+    f.onclick = () => {
+      if (G.busy || f.classList.contains("counted")) return;
+      f.classList.add("counted");
+      sfx.tap();
+      tag.textContent = count(10);
+    };
+    area.appendChild(f);
+    return f;
+  });
+  let loose = [];
+  if (ones) {
+    const t = tenFrame(ones, color);
+    t.f.classList.add("loose-frame");
+    loose = t.cells;
+    loose.forEach(c => c.addEventListener("click", () => {
+      if (G.busy || c.classList.contains("counted")) return;
+      c.classList.add("counted");
+      sfx.tap();
+      count(1);
+    }));
+    area.appendChild(t.f);
+  }
   ask("10개 묶음부터 세어 볼까? 모두 몇일까?", ["q3"]);
   choiceButtons(L.tensChoices(n));
-  showDemo(bundles[0]);
+  sizeFrames(area, tens + (ones ? 1 : 0)); // 보기 버튼까지 놓은 뒤 남은 공간으로 크기 정하기
+  showDemo(full[0]);
   G.current.together = async () => {
     G.busy = true;
     await say(["together"]);
-    for (let i = 0; i < bundles.length; i++) {
-      bundles[i].classList.add("counted");
-      bundles[i].querySelector(".ten").textContent = (i + 1) * 10;
+    for (let i = 0; i < full.length; i++) {
+      full[i].classList.add("counted");
+      full[i].querySelector(".ten").textContent = (i + 1) * 10;
       await say(["n" + (i + 1) * 10]);
     }
     for (let i = 0; i < loose.length; i++) {
       loose[i].classList.add("counted");
-      loose[i].querySelector(".tag").textContent = tens * 10 + i + 1;
       await say(["n" + (tens * 10 + i + 1)]);
     }
     G.busy = false;
